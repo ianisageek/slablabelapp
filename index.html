@@ -332,28 +332,33 @@ async function scanBluetooth(){
   try{
     const device=await navigator.bluetooth.requestDevice({
       filters:[
-        {namePrefix:'MUNBYN'},{namePrefix:'Munbyn'},{namePrefix:'ITPP'},{namePrefix:'MTP'},{namePrefix:'Label'}
+        {namePrefix:'ITPP130B'},{namePrefix:'ITPP'},{namePrefix:'MUNBYN'},{namePrefix:'Munbyn'},{namePrefix:'MTP'},{namePrefix:'Label'}
       ],
-      optionalServices:[BT_SERVICE,'000018f0-0000-1000-8000-00805f9b34fb']
+      optionalServices:[BT_SERVICE,'000018f0-0000-1000-8000-00805f9b34fb','49535343-fe7d-4ae5-8fa9-9fafd205e455','0000ff00-0000-1000-8000-00805f9b34fb','0000ffe0-0000-1000-8000-00805f9b34fb']
     });
     document.getElementById('bt-status-detail').textContent='Connecting to '+device.name+'...';
     const server=await device.gatt.connect();
     let char=null;
-    try{
-      const svc=await server.getPrimaryService(BT_SERVICE);
-      char=await svc.getCharacteristic(BT_CHAR);
-    }catch(e){
-      // Try fallback — some printers use different UUIDs
-      const svcs=await server.getPrimaryServices();
-      for(const svc of svcs){
-        const chars=await svc.getCharacteristics();
-        for(const c of chars){
-          if(c.properties.write||c.properties.writeWithoutResponse){char=c;break;}
-        }
-        if(char)break;
-      }
+    const knownPairs=[
+      ['000018f0-0000-1000-8000-00805f9b34fb','00002af1-0000-1000-8000-00805f9b34fb'],
+      ['49535343-fe7d-4ae5-8fa9-9fafd205e455','49535343-8841-43f4-a8d4-ecbe34729bb3'],
+      ['0000ff00-0000-1000-8000-00805f9b34fb','0000ff02-0000-1000-8000-00805f9b34fb'],
+      ['0000ffe0-0000-1000-8000-00805f9b34fb','0000ffe1-0000-1000-8000-00805f9b34fb'],
+    ];
+    for(const [svcUUID,chrUUID] of knownPairs){
+      try{const s=await server.getPrimaryService(svcUUID);char=await s.getCharacteristic(chrUUID);if(char)break;}catch(e){}
     }
-    if(!char)throw new Error('No writable characteristic found');
+    if(!char){
+      try{
+        const svcs=await server.getPrimaryServices();
+        for(const svc of svcs){
+          const chars=await svc.getCharacteristics();
+          for(const c of chars){if(c.properties.write||c.properties.writeWithoutResponse){char=c;break;}}
+          if(char)break;
+        }
+      }catch(e){}
+    }
+    if(!char)throw new Error('No writable characteristic found — make sure printer is paired in Android Settings first');
     btDevice=device;btChar=char;
     device.addEventListener('gattserverdisconnected',()=>{btDevice=null;btChar=null;updateBTStatus();toast('Printer disconnected','err');});
     updateBTStatus();
