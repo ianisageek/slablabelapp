@@ -376,12 +376,25 @@ async function sendTSPL(tspl){
   if(!btChar)throw new Error('Printer not connected');
   const encoder=new TextEncoder();
   const data=encoder.encode(tspl);
-  const CHUNK=512;
+  const CHUNK=100;
+  const DELAY=80;
+  console.log('Sending TSPL, total bytes:',data.length);
+  console.log('TSPL content:',tspl);
   for(let i=0;i<data.length;i+=CHUNK){
     const chunk=data.slice(i,i+CHUNK);
-    await btChar.writeValueWithoutResponse(chunk);
-    await new Promise(r=>setTimeout(r,50));
+    try{
+      if(btChar.properties.writeWithoutResponse){
+        await btChar.writeValueWithoutResponse(chunk);
+      } else {
+        await btChar.writeValue(chunk);
+      }
+    }catch(e){
+      console.log('Write error at byte',i,':',e);
+      throw e;
+    }
+    await new Promise(r=>setTimeout(r,DELAY));
   }
+  console.log('TSPL send complete');
 }
 
 function buildTSPL(p,qty){
