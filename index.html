@@ -290,8 +290,8 @@ let si=null, ei=null;
 let btDevice=null, btChar=null;
 
 // TSPL service/char UUIDs for thermal printers
-const BT_SERVICE = '000018f0-0000-1000-8000-00805f9b34fb';
-const BT_CHAR    = '00002af1-0000-1000-8000-00805f9b34fb';
+const BT_SERVICE = '49535343-fe7d-4ae5-8fa9-9fafd205e455';
+const BT_CHAR    = '49535343-8841-43f4-a8d4-ecbe34729bb3';
 
 function save(){localStorage.setItem('ssp_v2',JSON.stringify(prods));}
 function fmt(d){return d.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'});}
@@ -334,16 +334,16 @@ async function scanBluetooth(){
       filters:[
         {namePrefix:'ITPP130B'},{namePrefix:'ITPP'},{namePrefix:'MUNBYN'},{namePrefix:'Munbyn'},{namePrefix:'MTP'},{namePrefix:'Label'}
       ],
-      optionalServices:[BT_SERVICE,'000018f0-0000-1000-8000-00805f9b34fb','49535343-fe7d-4ae5-8fa9-9fafd205e455','0000ff00-0000-1000-8000-00805f9b34fb','0000ffe0-0000-1000-8000-00805f9b34fb']
+      optionalServices:['49535343-fe7d-4ae5-8fa9-9fafd205e455','000018f0-0000-1000-8000-00805f9b34fb','0000fff0-0000-1000-8000-00805f9b34fb','0000fee7-0000-1000-8000-00805f9b34fb']
     });
     document.getElementById('bt-status-detail').textContent='Connecting to '+device.name+'...';
     const server=await device.gatt.connect();
     let char=null;
     const knownPairs=[
-      ['000018f0-0000-1000-8000-00805f9b34fb','00002af1-0000-1000-8000-00805f9b34fb'],
       ['49535343-fe7d-4ae5-8fa9-9fafd205e455','49535343-8841-43f4-a8d4-ecbe34729bb3'],
+      ['49535343-fe7d-4ae5-8fa9-9fafd205e455','49535343-aca3-481c-91ec-d85e28a60318'],
+      ['000018f0-0000-1000-8000-00805f9b34fb','00002af1-0000-1000-8000-00805f9b34fb'],
       ['0000ff00-0000-1000-8000-00805f9b34fb','0000ff02-0000-1000-8000-00805f9b34fb'],
-      ['0000ffe0-0000-1000-8000-00805f9b34fb','0000ffe1-0000-1000-8000-00805f9b34fb'],
     ];
     for(const [svcUUID,chrUUID] of knownPairs){
       try{const s=await server.getPrimaryService(svcUUID);char=await s.getCharacteristic(chrUUID);if(char)break;}catch(e){}
